@@ -91,8 +91,8 @@ export default function OpportunityGrid({ type, industry, gradYears, organizer, 
   return (
     <div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {items.map((opp) => (
-          <OpportunityCard key={opp.id} opp={opp} />
+        {items.map((opp, i) => (
+          <OpportunityCard key={opp.id} opp={opp} delay={(i % 12) * 60} />
         ))}
       </div>
 

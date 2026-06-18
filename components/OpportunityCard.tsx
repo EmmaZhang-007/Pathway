@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Trophy, CalendarDays, Zap, MapPin, Calendar, GraduationCap, AlertCircle } from "lucide-react";
 import { Opportunity } from "@/lib/supabase";
@@ -46,19 +47,37 @@ function daysUntil(dateStr: string) {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   const target = new Date(dateStr + "T00:00:00");
-  const diff = Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  return diff;
+  return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-export default function OpportunityCard({ opp }: { opp: Opportunity }) {
+export default function OpportunityCard({ opp, delay = 0 }: { opp: Opportunity; delay?: number }) {
+  const cardRef = useRef<HTMLDivElement>(null);
   const days = daysUntil(opp.deadline);
   const deadlineUrgent = days !== null && days <= 7 && days >= 0;
   const deadlinePassed = days !== null && days < 0;
   const TypeIcon = TYPE_ICON[opp.type as keyof typeof TYPE_ICON] ?? CalendarDays;
 
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => el.classList.add("in-view"), delay);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.08 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [delay]);
+
   return (
     <div
-      className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 p-5 flex flex-col gap-3 hover:shadow-md transition-shadow"
+      ref={cardRef}
+      className="card-animate bg-white/90 rounded-xl shadow-sm border border-gray-100 border-l-4 p-5 flex flex-col gap-3 hover:shadow-md transition-shadow"
       style={{ borderLeftColor: TYPE_BORDER[opp.type] ?? "#00B5B8" }}
     >
       <div className="flex flex-wrap gap-1.5">
@@ -82,7 +101,9 @@ export default function OpportunityCard({ opp }: { opp: Opportunity }) {
             {opp.title}
           </h3>
         </Link>
-        <p className="text-[#6B7280] text-sm mt-0.5">{opp.organizer}</p>
+        <p className="text-[#6B7280] text-sm mt-0.5 font-[family-name:var(--font-cabinet-grotesk,var(--font-syne,var(--font-dm-sans)))]">
+          {opp.organizer}
+        </p>
       </div>
 
       {opp.description && (
