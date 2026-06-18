@@ -385,7 +385,7 @@ export async function POST(req: NextRequest) {
 
   const supabase = getServiceClient();
   const runAt = new Date().toISOString();
-  let allRecords: Scraped[] = [];
+  const allRecords: Scraped[] = [];
   const allErrors: string[] = [];
 
   // 1. Eventbrite
