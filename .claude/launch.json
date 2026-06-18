@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pathways",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "cd \"/Users/wuju/Desktop/Emma's Portfolio 26:27/pathways\" && npm run dev"],
+      "port": 3001
+    }
+  ]
+}
