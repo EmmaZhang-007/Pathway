@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Trophy, CalendarDays, Zap, MapPin, Calendar, GraduationCap, AlertCircle } from "lucide-react";
 import { Opportunity } from "@/lib/supabase";
 
@@ -38,8 +38,9 @@ const INDUSTRY_BADGE: Record<string, string> = {
 
 function formatDate(dateStr: string) {
   if (!dateStr) return null;
-  const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" });
+  return new Date(dateStr + "T00:00:00").toLocaleDateString("en-CA", {
+    month: "short", day: "numeric", year: "numeric",
+  });
 }
 
 function daysUntil(dateStr: string) {
@@ -51,34 +52,25 @@ function daysUntil(dateStr: string) {
 }
 
 export default function OpportunityCard({ opp, delay = 0 }: { opp: Opportunity; delay?: number }) {
-  const cardRef = useRef<HTMLDivElement>(null);
   const days = daysUntil(opp.deadline);
   const deadlineUrgent = days !== null && days <= 7 && days >= 0;
   const deadlinePassed = days !== null && days < 0;
   const TypeIcon = TYPE_ICON[opp.type as keyof typeof TYPE_ICON] ?? CalendarDays;
 
-  useEffect(() => {
-    const el = cardRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setTimeout(() => el.classList.add("in-view"), delay);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.08 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [delay]);
-
   return (
-    <div
-      ref={cardRef}
-      className="card-animate bg-white/90 rounded-xl shadow-sm border border-gray-100 border-l-4 p-5 flex flex-col gap-3 hover:shadow-md transition-shadow"
+    <motion.div
+      className="bg-white/90 rounded-2xl border border-gray-100 border-l-4 p-6 flex flex-col gap-3 cursor-default"
       style={{ borderLeftColor: TYPE_BORDER[opp.type] ?? "#00B5B8" }}
+      initial={{ opacity: 0, y: 22, scale: 0.96 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.42, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
+      whileHover={{
+        scale: 1.02,
+        boxShadow: "0 12px 40px rgba(0,0,0,0.10)",
+        transition: { duration: 0.18 },
+      }}
+      whileTap={{ scale: 0.985, transition: { duration: 0.1 } }}
     >
       <div className="flex flex-wrap gap-1.5">
         <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${TYPE_BADGE[opp.type] ?? TYPE_BADGE.conference}`}>
@@ -97,24 +89,21 @@ export default function OpportunityCard({ opp, delay = 0 }: { opp: Opportunity; 
 
       <div>
         <Link href={`/opportunity/${opp.id}`}>
-          <h3 className="text-[#1A1A1A] font-semibold text-base leading-snug hover:text-[#00B5B8] transition-colors cursor-pointer">
+          <h3 className="text-[#1A1A1A] font-semibold text-base leading-snug hover:text-[#00B5B8] transition-colors">
             {opp.title}
           </h3>
         </Link>
-        <p className="text-[#6B7280] text-sm mt-0.5 font-[family-name:var(--font-cabinet-grotesk,var(--font-syne,var(--font-dm-sans)))]">
-          {opp.organizer}
-        </p>
+        <p className="text-[#6B7280] text-sm mt-0.5">{opp.organizer}</p>
       </div>
 
       {opp.description && (
-        <p className="text-[#6B7280] text-sm line-clamp-2">{opp.description}</p>
+        <p className="text-[#6B7280] text-sm line-clamp-2 leading-relaxed">{opp.description}</p>
       )}
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#9CA3AF]">
         {opp.location && (
           <span className="inline-flex items-center gap-1">
-            <MapPin size={11} />
-            {opp.location}
+            <MapPin size={11} />{opp.location}
           </span>
         )}
         {opp.date_start && (
@@ -131,7 +120,7 @@ export default function OpportunityCard({ opp, delay = 0 }: { opp: Opportunity; 
         )}
       </div>
 
-      <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-100">
+      <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
         <div className="text-xs">
           {opp.deadline ? (
             deadlinePassed ? (
@@ -148,15 +137,17 @@ export default function OpportunityCard({ opp, delay = 0 }: { opp: Opportunity; 
             <span className="text-[#9CA3AF]">No deadline listed</span>
           )}
         </div>
-        <a
+        <motion.a
           href={opp.registration_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-[#00B5B8] hover:bg-[#009A9D] text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+          className="bg-[#00B5B8] text-white text-xs font-semibold px-4 py-2 rounded-lg"
+          whileHover={{ backgroundColor: "#009A9D", scale: 1.04, transition: { duration: 0.15 } }}
+          whileTap={{ scale: 0.96 }}
         >
           Register →
-        </a>
+        </motion.a>
       </div>
-    </div>
+    </motion.div>
   );
 }

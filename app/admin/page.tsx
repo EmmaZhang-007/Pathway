@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { CheckCircle2, ClipboardList, Check } from "lucide-react";
+import { CheckCircle2, ClipboardList, Check, ListChecks } from "lucide-react";
 import { Opportunity } from "@/lib/supabase";
 
 // ── Shared field components ───────────────────────────────────────────────────
@@ -53,7 +53,7 @@ interface IngestionLog {
   errors: string | null;
 }
 
-type Tab = "pending" | "add" | "logs";
+type Tab = "pending" | "active" | "add" | "logs";
 
 // ── AdminGate ─────────────────────────────────────────────────────────────────
 
@@ -535,6 +535,163 @@ function PendingReview({ password }: { password: string }) {
   );
 }
 
+// ── Active Listings tab ───────────────────────────────────────────────────────
+
+function ActiveListings() {
+  const [listings, setListings] = useState<Opportunity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<"delete" | "unpublish" | null>(null);
+  const [acting, setActing] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch("/api/admin/opportunities?verified=true");
+    if (res.ok) setListings(await res.json());
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const openConfirm = (id: string, action: "delete" | "unpublish") => {
+    setConfirmId(id);
+    setConfirmAction(action);
+  };
+
+  const closeConfirm = () => {
+    setConfirmId(null);
+    setConfirmAction(null);
+  };
+
+  const handleConfirm = async () => {
+    if (!confirmId || !confirmAction) return;
+    setActing(true);
+    if (confirmAction === "delete") {
+      await fetch(`/api/admin/opportunities/${confirmId}`, { method: "DELETE" });
+      setListings((prev) => prev.filter((o) => o.id !== confirmId));
+    } else {
+      await fetch(`/api/admin/opportunities/${confirmId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_verified: false }),
+      });
+      setListings((prev) => prev.filter((o) => o.id !== confirmId));
+    }
+    setActing(false);
+    closeConfirm();
+  };
+
+  return (
+    <div>
+      {/* Confirmation dialog */}
+      {confirmId && confirmAction && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/40"
+            onClick={closeConfirm}
+            aria-hidden="true"
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <div className="pointer-events-auto bg-white rounded-2xl shadow-xl border border-gray-100 px-6 py-5 max-w-sm w-full flex flex-col gap-4">
+              <p className="text-[#1A1A1A] font-medium text-sm">
+                {confirmAction === "delete"
+                  ? "Are you sure you want to permanently remove this listing?"
+                  : "Unpublish this listing? It will be hidden from students and moved back to Pending Review."}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleConfirm}
+                  disabled={acting}
+                  className={`flex-1 text-sm font-semibold px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${
+                    confirmAction === "delete"
+                      ? "bg-red-600 hover:bg-red-700 text-white"
+                      : "bg-amber-500 hover:bg-amber-600 text-white"
+                  }`}
+                >
+                  {acting ? "…" : confirmAction === "delete" ? "Yes, Delete" : "Yes, Unpublish"}
+                </button>
+                <button
+                  onClick={closeConfirm}
+                  className="flex-1 text-sm text-[#6B7280] border border-gray-200 hover:border-[#00B5B8] px-4 py-2 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      <div className="flex items-center justify-between mb-6">
+        <p className="text-sm text-[#6B7280]">
+          {listings.length} active listing{listings.length !== 1 ? "s" : ""}
+        </p>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <div className="w-6 h-6 border-2 border-[#00B5B8] border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : listings.length === 0 ? (
+        <div className="text-center py-16">
+          <ListChecks size={36} className="text-[#9CA3AF] mx-auto mb-3" />
+          <p className="text-[#1A1A1A] font-medium">No active listings.</p>
+          <p className="text-[#9CA3AF] text-sm mt-1">Approve opportunities from Pending Review to see them here.</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 text-left text-xs text-[#9CA3AF] uppercase tracking-widest bg-[#F5F5F5]">
+                <th className="px-4 py-3">Title</th>
+                <th className="px-4 py-3">Organizer</th>
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Date</th>
+                <th className="px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {listings.map((opp) => (
+                <tr
+                  key={opp.id}
+                  className="border-b border-gray-100 hover:bg-[#F5F5F5] transition-colors"
+                >
+                  <td className="px-4 py-3 text-[#1A1A1A] font-medium max-w-[220px]">
+                    <span className="line-clamp-2">{opp.title}</span>
+                  </td>
+                  <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{opp.organizer}</td>
+                  <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap capitalize">
+                    {opp.type?.replace("_", " ")}
+                  </td>
+                  <td className="px-4 py-3 text-[#9CA3AF] whitespace-nowrap text-xs">
+                    {opp.date_start ?? "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1.5 items-center">
+                      <button
+                        onClick={() => openConfirm(opp.id, "unpublish")}
+                        className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-lg hover:bg-amber-100 transition-colors whitespace-nowrap"
+                      >
+                        Unpublish
+                      </button>
+                      <button
+                        onClick={() => openConfirm(opp.id, "delete")}
+                        className="text-xs bg-red-50 text-red-600 border border-red-200 px-2.5 py-1 rounded-lg hover:bg-red-100 transition-colors whitespace-nowrap"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Add Manually tab ──────────────────────────────────────────────────────────
 
 const EMPTY_FORM = {
@@ -842,6 +999,7 @@ function AdminDashboard({ password }: { password: string }) {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "pending", label: "Pending Review" },
+    { id: "active", label: "Active Listings" },
     { id: "add", label: "Add Manually" },
     { id: "logs", label: "Ingestion Logs" },
   ];
@@ -885,6 +1043,7 @@ function AdminDashboard({ password }: { password: string }) {
 
       {/* Tab content */}
       {tab === "pending" && <PendingReview password={password} />}
+      {tab === "active" && <ActiveListings />}
       {tab === "add" && <AddManually />}
       {tab === "logs" && <IngestionLogs />}
     </main>

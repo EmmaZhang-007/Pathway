@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { SlidersHorizontal, ChevronDown, ChevronUp } from "lucide-react";
 
 const TYPES = [
@@ -67,17 +68,20 @@ function FilterContent({
         <p className="text-xs text-[#6B7280] mb-1.5 font-medium uppercase tracking-wide">Type</p>
         <div className="flex gap-1.5">
           {TYPES.map((t) => (
-            <button
+            <motion.button
               key={t.value}
               onClick={() => onTypeChange(t.value)}
-              className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
+              className={`text-xs px-3 py-1.5 rounded-full font-medium ${
                 selectedType === t.value
                   ? TYPE_ACTIVE[t.value]
-                  : "bg-white text-[#6B7280] border border-gray-200 hover:border-[#00B5B8]"
+                  : "bg-white text-[#6B7280] border border-gray-200"
               }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.15 }}
             >
               {t.label}
-            </button>
+            </motion.button>
           ))}
         </div>
       </div>
@@ -87,17 +91,20 @@ function FilterContent({
         <p className="text-xs text-[#6B7280] mb-1.5 font-medium uppercase tracking-wide">Industry</p>
         <div className="flex gap-1.5">
           {INDUSTRIES.map((i) => (
-            <button
+            <motion.button
               key={i.value}
               onClick={() => onIndustryChange(i.value)}
-              className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
+              className={`text-xs px-3 py-1.5 rounded-full font-medium ${
                 selectedIndustry === i.value
                   ? "bg-[#00B5B8] text-white"
-                  : "bg-white text-[#6B7280] border border-gray-200 hover:border-[#00B5B8]"
+                  : "bg-white text-[#6B7280] border border-gray-200"
               }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.15 }}
             >
               {i.label}
-            </button>
+            </motion.button>
           ))}
         </div>
       </div>
@@ -107,17 +114,20 @@ function FilterContent({
         <p className="text-xs text-[#6B7280] mb-1.5 font-medium uppercase tracking-wide">Grad Year</p>
         <div className="flex gap-1.5">
           {GRAD_YEARS.map((year) => (
-            <button
+            <motion.button
               key={year}
               onClick={() => onGradYearToggle(year)}
-              className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
+              className={`text-xs px-3 py-1.5 rounded-full font-medium ${
                 selectedGradYears.includes(year)
                   ? "bg-[#7B2FBE] text-white"
-                  : "bg-white text-[#6B7280] border border-gray-200 hover:border-[#7B2FBE]"
+                  : "bg-white text-[#6B7280] border border-gray-200"
               }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.15 }}
             >
               {String(year).slice(2)}
-            </button>
+            </motion.button>
           ))}
         </div>
       </div>

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const verified = req.nextUrl.searchParams.get("verified") === "true";
   const supabase = getServiceClient();
   const { data, error } = await supabase
     .from("opportunities")
     .select("*")
-    .eq("is_verified", false)
+    .eq("is_verified", verified)
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Righteous, DM_Sans, Syne } from "next/font/google";
 import Link from "next/link";
+import PageTransition from "@/components/PageTransition";
 import FeedbackToast from "@/components/FeedbackToast";
 import "./globals.css";
 
@@ -85,7 +86,7 @@ export default function RootLayout({
             Request to Add Event
           </a>
         </nav>
-        {children}
+        <PageTransition>{children}</PageTransition>
         <FeedbackToast />
       </body>
     </html>

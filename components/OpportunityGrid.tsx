@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { motion } from "framer-motion";
 import { SearchX } from "lucide-react";
 import { getSupabase, Opportunity } from "@/lib/supabase";
 import OpportunityCard from "./OpportunityCard";
@@ -15,6 +16,11 @@ interface Props {
   sort: string;
 }
 
+const gridVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.06 } },
+};
+
 export default function OpportunityGrid({ type, industry, gradYears, organizer, sort }: Props) {
   const [items, setItems] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,36 +29,40 @@ export default function OpportunityGrid({ type, industry, gradYears, organizer, 
   const observerRef = useRef<IntersectionObserver | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const fetchPage = useCallback(async (pageIndex: number, reset: boolean) => {
-    setLoading(true);
-    let query = getSupabase()
-      .from("opportunities")
-      .select("*")
-      .eq("is_verified", true)
-      .range(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE - 1);
+  const fetchPage = useCallback(
+    async (pageIndex: number, reset: boolean) => {
+      setLoading(true);
+      let query = getSupabase()
+        .from("opportunities")
+        .select("*")
+        .eq("is_verified", true)
+        .range(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE - 1);
 
-    if (type) query = query.eq("type", type);
-    if (industry) query = query.eq("industry", industry);
-    if (organizer) query = query.ilike("organizer", `%${organizer}%`);
-    if (gradYears.length > 0) query = query.overlaps("grad_year", gradYears);
+      if (type) query = query.eq("type", type);
+      if (industry) query = query.eq("industry", industry);
+      if (organizer) query = query.ilike("organizer", `%${organizer}%`);
+      if (gradYears.length > 0) query = query.overlaps("grad_year", gradYears);
 
-    query = query
-      .gte("date_start", "2026-06-17")
-      .lte("date_start", "2027-08-31");
+      query = query
+        .gte("date_start", "2026-06-17")
+        .lte("date_start", "2027-08-31");
 
-    if (sort === "created_at") {
-      query = query.order("created_at", { ascending: false });
-    } else {
-      query = query.order("deadline", { ascending: true, nullsFirst: false });
-    }
+      if (sort === "created_at") {
+        query = query.order("created_at", { ascending: false });
+      } else {
+        query = query.order("deadline", { ascending: true, nullsFirst: false });
+      }
 
-    const { data, error } = await query;
-    if (!error && data) {
-      setItems((prev) => reset ? data as Opportunity[] : [...prev, ...data as Opportunity[]]);
-      setHasMore(data.length === PAGE_SIZE);
-    }
-    setLoading(false);
-  }, [type, industry, gradYears, organizer, sort]);
+      const { data, error } = await query;
+      if (!error && data) {
+        const rows = data as Opportunity[];
+        setItems((prev) => (reset ? rows : [...prev, ...rows]));
+        setHasMore(data.length === PAGE_SIZE);
+      }
+      setLoading(false);
+    },
+    [type, industry, gradYears, organizer, sort]
+  );
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const gradYearsKey = gradYears.join(",");
@@ -67,13 +77,16 @@ export default function OpportunityGrid({ type, industry, gradYears, organizer, 
 
   useEffect(() => {
     if (observerRef.current) observerRef.current.disconnect();
-    observerRef.current = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && hasMore && !loading) {
-        const next = page + 1;
-        setPage(next);
-        fetchPage(next, false);
-      }
-    }, { threshold: 0.1 });
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          const next = page + 1;
+          setPage(next);
+          fetchPage(next, false);
+        }
+      },
+      { threshold: 0.1 }
+    );
     if (sentinelRef.current) observerRef.current.observe(sentinelRef.current);
     return () => observerRef.current?.disconnect();
   }, [hasMore, loading, page, fetchPage]);
@@ -90,11 +103,16 @@ export default function OpportunityGrid({ type, industry, gradYears, organizer, 
 
   return (
     <div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <motion.div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        variants={gridVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {items.map((opp, i) => (
-          <OpportunityCard key={opp.id} opp={opp} delay={(i % 12) * 60} />
+          <OpportunityCard key={opp.id} opp={opp} delay={(i % 12) * 0.06} />
         ))}
-      </div>
+      </motion.div>
 
       <div ref={sentinelRef} className="h-8 mt-6" />
 

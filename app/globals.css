@@ -41,17 +41,6 @@ h1, h2, h3, h4 {
   font-family: 'Cabinet Grotesk', 'Syne', var(--font-dm-sans), sans-serif;
 }
 
-/* Card scroll-in animation */
-.card-animate {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.4s ease, transform 0.4s ease;
-}
-.card-animate.in-view {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 @layer utilities {
   .text-balance {
     text-wrap: balance;
